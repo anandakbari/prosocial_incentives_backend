@@ -248,9 +248,10 @@ export const corsOptions = {
       'http://localhost:5173',
       'http://localhost:5174',
       'http://localhost:5175',
+      'http://localhost:5176',
       'https://prosocial-incentives.onrender.com',
       'https://prosocial-incentives-backend.onrender.com',
-      'https://prosocial.netlify.app/'
+      'https://prosocial.netlify.app'
     ];
     
     const allowedOrigins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim()) || defaultOrigins;
