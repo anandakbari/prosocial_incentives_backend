@@ -243,15 +243,23 @@ export const corsOptions = {
     // Allow requests with no origin (mobile apps, etc.)
     if (!origin) return callback(null, true);
     
-    const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [
+    const defaultOrigins = [
       'http://localhost:3000',
-      'http://localhost:5173'
+      'http://localhost:5173',
+      'https://prosocial-incentives.onrender.com',
+      'https://prosocial-incentives-backend.onrender.com'
     ];
     
-    if (allowedOrigins.includes(origin)) {
+    const allowedOrigins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim()) || defaultOrigins;
+    
+    console.log(`🔍 CORS check - Origin: ${origin}, Allowed: ${allowedOrigins.join(', ')}`);
+    
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      console.log(`✅ CORS allowed for origin: ${origin}`);
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      console.log(`❌ CORS blocked for origin: ${origin}`);
+      callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
     }
   },
   credentials: true,
