@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Redis service for queue management
+  redis:
+    image: redis:7-alpine
+    container_name: prosocial-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Matchmaking backend service
+  matchmaking-backend:
+    build: .
+    container_name: prosocial-matchmaking
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - REDIS_URL=redis://redis:6379
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+      - HUMAN_SEARCH_TIMEOUT_MS=45000
+      - AI_FALLBACK_ENABLED=true
+      - MAX_QUEUE_SIZE=1000
+      - SKILL_MATCHING_THRESHOLD=1.5
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - ./logs:/app/logs
+
+  # Redis Commander for Redis management (development only)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: prosocial-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    profiles:
+      - dev
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  default:
+    name: prosocial-network
