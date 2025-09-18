@@ -263,7 +263,7 @@ export const corsOptions = {
       callback(null, true);
     } else {
       console.log(`❌ CORS blocked for origin: ${origin}`);
-      callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
+      callback(null, false);
     }
   },
   credentials: true,
