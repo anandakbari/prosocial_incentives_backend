@@ -131,6 +131,7 @@ class WebSocketService {
       }
 
       console.log(`✅ Participant registered: ${participantId} (${name})`);
+      console.log(`📝 Registration data received:`, { participantId, roundNumber, name, treatmentGroup });
       
       socket.emit('registration_success', {
         participantId,
@@ -174,9 +175,14 @@ class WebSocketService {
         status: 'searching'
       });
 
+      // Get participant name from connected clients
+      const clientInfo = this.connectedClients.get(participantId);
+      const participantName = clientInfo?.name;
+
       // Start matchmaking process
       const result = await MatchmakingEngine.startMatchmaking({
         participantId,
+        participantName,
         roundNumber,
         skillLevel: skillLevel || 7,
         treatmentGroup: treatmentGroup || 'control'

@@ -26,7 +26,7 @@ class MatchmakingEngine {
    * @returns {Promise<Object>} Match result
    */
   async startMatchmaking(participantData) {
-  const { participantId, roundNumber, skillLevel, treatmentGroup } = participantData;
+  const { participantId, participantName, roundNumber, skillLevel, treatmentGroup } = participantData;
 
   console.log(`🔍 Starting matchmaking for participant ${participantId} in round ${roundNumber}`);
 
@@ -189,7 +189,7 @@ class MatchmakingEngine {
  * @param {Object} participantData - Participant information
  */
 async joinQueue(participantData) {
-  const { participantId, roundNumber, skillLevel, treatmentGroup } = participantData;
+  const { participantId, participantName, roundNumber, skillLevel, treatmentGroup } = participantData;
   const queueKey = `queue:round:${roundNumber}`;
 
   try {
@@ -210,6 +210,7 @@ async joinQueue(participantData) {
     // ✅ Safe to enqueue
     const queueEntry = {
       participantId,
+      participantName: participantName || `Player ${participantId.slice(-4)}`,
       roundNumber,
       skillLevel: skillLevel || 7,
       treatmentGroup: treatmentGroup || 'control',
@@ -373,6 +374,19 @@ async joinQueue(participantData) {
         throw new Error('Self-match attempted');
       }
 
+      // Get participant name from database if not provided
+      let participant2Name = participant2Data.participantName;
+      if (!participant2Name) {
+        try {
+          const participant2Info = await DatabaseService.getParticipant(participant2Data.participantId);
+          participant2Name = participant2Info?.name || `Player ${participant2Data.participantId.slice(-4)}`;
+          console.log(`📝 Retrieved participant name from DB: ${participant2Name}`);
+        } catch (dbError) {
+          console.warn('⚠️ Failed to get participant name from DB, using fallback');
+          participant2Name = `Player ${participant2Data.participantId.slice(-4)}`;
+        }
+      }
+
       const matchData = {
         id: matchId,
         participant1_id: participant1Data.participantId,
@@ -383,7 +397,7 @@ async joinQueue(participantData) {
         created_at: new Date().toISOString(),
         isAI: false,
         opponent: JSON.stringify({ // Stringify the nested object
-          name: `Player ${participant2Data.participantId.slice(-4)}`,
+          name: participant2Name,
           participant_id: participant2Data.participantId,
           skill_level: participant2Data.skillLevel
         })
