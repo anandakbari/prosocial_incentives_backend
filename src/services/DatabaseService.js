@@ -496,13 +496,24 @@ class DatabaseService {
         .or(`participant1_id.eq.${participantId},participant2_id.eq.${participantId}`)
         .eq('round_number', roundNumber)
         .in('status', ['active', 'pending'])
-        .maybeSingle();
+        .order('created_at', { ascending: false });
 
       if (error) {
         throw error;
       }
 
-      return data || null;
+      // If multiple matches exist (race condition), return the most recent one
+      // Log warning about duplicates for debugging
+      if (data && data.length > 1) {
+        logger.warn('Multiple active matches found for participant:', {
+          participantId,
+          roundNumber,
+          matchCount: data.length,
+          matchIds: data.map(m => m.id)
+        });
+      }
+
+      return data && data.length > 0 ? data[0] : null;
     } catch (error) {
       logger.error('Error checking active match for participant:', {
         participantId,

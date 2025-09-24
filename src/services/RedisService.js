@@ -293,6 +293,46 @@ class RedisService {
       throw error;
     }
   }
+
+  // Distributed locking for race condition prevention
+  async acquireLock(lockKey, lockValue, timeoutMs = 5000) {
+    try {
+      // Use SET with NX (only set if not exists) and PX (expiry in milliseconds)
+      const result = await this.client.set(lockKey, lockValue, {
+        NX: true,  // Only set if key doesn't exist
+        PX: timeoutMs  // Expire after timeoutMs milliseconds
+      });
+      
+      return result === 'OK';
+    } catch (error) {
+      console.error('Error acquiring lock:', error);
+      return false;
+    }
+  }
+
+  async releaseLock(lockKey, lockValue) {
+    try {
+      // Use Lua script to atomically check value and delete if it matches
+      // This prevents releasing someone else's lock
+      const script = `
+        if redis.call("get", KEYS[1]) == ARGV[1] then
+          return redis.call("del", KEYS[1])
+        else
+          return 0
+        end
+      `;
+      
+      const result = await this.client.eval(script, {
+        keys: [lockKey],
+        arguments: [lockValue]
+      });
+      
+      return result === 1;
+    } catch (error) {
+      console.error('Error releasing lock:', error);
+      return false;
+    }
+  }
 }
 
 export default new RedisService();

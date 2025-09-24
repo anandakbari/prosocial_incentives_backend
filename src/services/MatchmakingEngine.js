@@ -118,34 +118,61 @@ class MatchmakingEngine {
   async findImmediateMatch(participantData) {
     const { participantId, roundNumber, skillLevel } = participantData;
     const queueKey = `queue:round:${roundNumber}`;
+    const lockKey = `matchlock:round:${roundNumber}`;
+    
+    // Use Redis-based distributed lock to prevent race conditions
+    const lockValue = `${participantId}-${Date.now()}`;
+    const lockTimeout = 5000; // 5 seconds max lock time
     
     try {
       console.log(`🔍 Looking for immediate match for participant ${participantId}`);
       
-      // First, let's see ALL participants in the queue
-      const allParticipants = await RedisService.getQueueEntries(queueKey);
-      console.log(`👥 ALL participants in queue ${queueKey}:`, allParticipants.map(p => `${p.participantId} (skill: ${p.skillLevel})`));
-      
-      // Get waiting participants (excluding self)
-      const waitingParticipants = await RedisService.getQueueEntries(queueKey, participantId);
-      console.log(`⏳ Waiting participants (excluding ${participantId}):`, waitingParticipants.map(p => `${p.participantId} (skill: ${p.skillLevel})`));
-      
-      if (waitingParticipants.length === 0) {
-        console.log('📭 No waiting participants found');
+      // Acquire distributed lock
+      const lockAcquired = await RedisService.acquireLock(lockKey, lockValue, lockTimeout);
+      if (!lockAcquired) {
+        console.log(`⏳ Match lock busy for round ${roundNumber}, participant ${participantId} waiting`);
         return null;
       }
-
-      console.log(`👥 Found ${waitingParticipants.length} waiting participants`);
-
-      // Find best skill match
-      const bestMatch = this.findBestSkillMatch(skillLevel, waitingParticipants);
       
-      if (bestMatch) {
-        console.log(`✅ Found skill match: ${bestMatch.participantId} (skill: ${bestMatch.skillLevel})`);
-        return await this.createHumanMatch(participantData, bestMatch);
-      }
+      console.log(`🔒 Acquired match lock for round ${roundNumber}, participant ${participantId}`);
+      
+      try {
+        // First, let's see ALL participants in the queue
+        const allParticipants = await RedisService.getQueueEntries(queueKey);
+        console.log(`👥 ALL participants in queue ${queueKey}:`, allParticipants.map(p => `${p.participantId} (skill: ${p.skillLevel})`));
+        
+        // Get waiting participants (excluding self)
+        const waitingParticipants = await RedisService.getQueueEntries(queueKey, participantId);
+        console.log(`⏳ Waiting participants (excluding ${participantId}):`, waitingParticipants.map(p => `${p.participantId} (skill: ${p.skillLevel})`));
+        
+        if (waitingParticipants.length === 0) {
+          console.log('📭 No waiting participants found');
+          return null;
+        }
 
-      console.log('❌ No suitable skill matches found');
+        console.log(`👥 Found ${waitingParticipants.length} waiting participants`);
+
+        // Find best skill match
+        const bestMatch = this.findBestSkillMatch(skillLevel, waitingParticipants);
+        
+        if (bestMatch) {
+          console.log(`✅ Found skill match: ${bestMatch.participantId} (skill: ${bestMatch.skillLevel})`);
+          
+          // Create match while still holding the lock
+          const match = await this.createHumanMatch(participantData, bestMatch);
+          
+          console.log(`🔓 Releasing match lock for round ${roundNumber}, participant ${participantId}`);
+          await RedisService.releaseLock(lockKey, lockValue);
+          
+          return match;
+        }
+
+        console.log('❌ No suitable skill matches found');
+      } finally {
+        // Always release the lock, even if an error occurs
+        await RedisService.releaseLock(lockKey, lockValue);
+        console.log(`🔓 Released match lock for round ${roundNumber}, participant ${participantId}`);
+      }
       return null;
 
     } catch (error) {
