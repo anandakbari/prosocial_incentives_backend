@@ -481,7 +481,7 @@ async joinQueue(participantData) {
         participant1_id: participantId,
         participant2_id: null,
         round_number: roundNumber,
-        match_type: 'human_vs_ai',
+        match_type: 'live',
         status: 'active',
         created_at: new Date().toISOString(),
         isAI: true,
