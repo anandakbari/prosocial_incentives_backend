@@ -153,17 +153,18 @@ class RedisService {
     try {
       const matchKey = `match:${matchId}`;
       
-      // Convert specific fields to strings for Redis storage while preserving types
-      const redisData = { ...matchData };
+      // Convert all fields to strings for Redis storage
+      const redisData = {};
       
-      // Convert boolean isAI to string for Redis
-      if (typeof redisData.isAI === 'boolean') {
-        redisData.isAI = redisData.isAI.toString();
-      }
-      
-      // Ensure numbers are strings
-      if (typeof redisData.round_number === 'number') {
-        redisData.round_number = redisData.round_number.toString();
+      // Safely convert all values to strings
+      for (const [key, value] of Object.entries(matchData)) {
+        if (value === null || value === undefined) {
+          redisData[key] = '';
+        } else if (typeof value === 'object') {
+          redisData[key] = JSON.stringify(value);
+        } else {
+          redisData[key] = value.toString();
+        }
       }
       
       await this.client.hSet(matchKey, {

@@ -1,11 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
+import { getBotName } from '../utils/nameUtils.js';
 
 class AIOpponentService {
   constructor() {
     this.aiOpponents = [
       { 
         id: 'ai_1', 
-        name: 'Bot Alex', 
         skillLevel: 7.2, 
         personality: 'competitive', 
         responsePattern: 'fast',
@@ -13,7 +13,6 @@ class AIOpponentService {
       },
       { 
         id: 'ai_2', 
-        name: 'Bot Pat', 
         skillLevel: 6.8, 
         personality: 'collaborative', 
         responsePattern: 'medium',
@@ -21,7 +20,6 @@ class AIOpponentService {
       },
       { 
         id: 'ai_3', 
-        name: 'Bot Charlie', 
         skillLevel: 7.5, 
         personality: 'analytical', 
         responsePattern: 'slow',
@@ -29,7 +27,6 @@ class AIOpponentService {
       },
       { 
         id: 'ai_4', 
-        name: 'Bot Riley', 
         skillLevel: 6.5, 
         personality: 'competitive', 
         responsePattern: 'medium',
@@ -37,7 +34,6 @@ class AIOpponentService {
       },
       { 
         id: 'ai_5', 
-        name: 'Bot Morgan', 
         skillLevel: 7.8, 
         personality: 'analytical', 
         responsePattern: 'fast',
@@ -45,7 +41,6 @@ class AIOpponentService {
       },
       { 
         id: 'ai_6', 
-        name: 'Bot Casey', 
         skillLevel: 6.0, 
         personality: 'collaborative', 
         responsePattern: 'slow',
@@ -53,7 +48,6 @@ class AIOpponentService {
       },
       { 
         id: 'ai_7', 
-        name: 'Bot Jordan', 
         skillLevel: 8.0, 
         personality: 'competitive', 
         responsePattern: 'fast',
@@ -61,7 +55,6 @@ class AIOpponentService {
       },
       { 
         id: 'ai_8', 
-        name: 'Bot Sam', 
         skillLevel: 5.5, 
         personality: 'analytical', 
         responsePattern: 'medium',
@@ -89,7 +82,7 @@ class AIOpponentService {
     if (suitableOpponents.length > 0) {
       // Select randomly from suitable opponents
       selectedOpponent = suitableOpponents[Math.floor(Math.random() * suitableOpponents.length)];
-      console.log(`✅ Found ${suitableOpponents.length} suitable opponents, selected: ${selectedOpponent.name}`);
+      console.log(`✅ Found ${suitableOpponents.length} suitable opponents, selected: ${selectedOpponent.id}`);
     } else {
       // Fallback: select the closest skill level
       selectedOpponent = this.aiOpponents.reduce((closest, current) => {
@@ -97,7 +90,7 @@ class AIOpponentService {
         const closestDiff = Math.abs(closest.skillLevel - participantSkillLevel);
         return currentDiff < closestDiff ? current : closest;
       });
-      console.log(`⚠️ No suitable opponents found, using closest skill match: ${selectedOpponent.name}`);
+      console.log(`⚠️ No suitable opponents found, using closest skill match: ${selectedOpponent.id}`);
     }
 
     return {
@@ -153,6 +146,10 @@ class AIOpponentService {
   createAIMatch(participantId, roundNumber, participantSkillLevel = 7) {
     const aiOpponent = this.selectOpponent(participantSkillLevel);
     const matchId = uuidv4();
+    
+    // Generate a unique AI opponent ID based on participant and AI opponent
+    const aiOpponentId = `${aiOpponent.id}-${participantId.slice(-4)}`;
+    const aiName = getBotName(aiOpponentId);
 
     const matchData = {
       id: matchId,
@@ -165,8 +162,8 @@ class AIOpponentService {
       isAI: true,
       opponent: JSON.stringify({
         id: aiOpponent.id,
-        name: aiOpponent.name,
-        participant_id: aiOpponent.id,
+        name: aiName,
+        participant_id: aiOpponentId,
         skill_level: aiOpponent.actualSkillLevel,
         personality: aiOpponent.personality,
         responsePattern: aiOpponent.responsePattern,
@@ -179,7 +176,7 @@ class AIOpponentService {
       })
     };
 
-    console.log(`✅ Created AI match: ${participantId} vs ${aiOpponent.name} (${aiOpponent.skillLevel})`);
+    console.log(`✅ Created AI match: ${participantId} vs ${aiName} (${aiOpponent.skillLevel})`);
     return matchData;
   }
 

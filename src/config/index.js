@@ -30,7 +30,7 @@ export const config = {
     maxQueueSize: parseInt(process.env.MAX_QUEUE_SIZE) || 1000,
     skillMatchingThreshold: parseFloat(process.env.SKILL_MATCHING_THRESHOLD) || 1.5,
     searchIntervalMs: 3000,
-    minSearchAttempts: 10
+    minSearchAttempts: 60  // 60 attempts * 3s = 3 minutes
   },
   
   websocket: {

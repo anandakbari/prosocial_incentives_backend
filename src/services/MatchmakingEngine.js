@@ -3,6 +3,7 @@ import RedisService from './RedisService.js';
 import AIOpponentService from './AIOpponentService.js';
 import { config } from '../config/index.js';
 import DatabaseService from './DatabaseService.js';
+import { getBotName } from '../utils/nameUtils.js';
 
 class MatchmakingEngine {
   constructor() {
@@ -474,6 +475,7 @@ async joinQueue(participantData) {
       console.error('❌ Error creating AI match:', error);
       
       // Fallback AI match
+      const fallbackOpponentId = `AI-FALLBACK-${participantId.slice(-4)}`;
       const fallbackMatch = {
         id: uuidv4(),
         participant1_id: participantId,
@@ -485,8 +487,8 @@ async joinQueue(participantData) {
         isAI: true,
         opponent: JSON.stringify({ // Stringify the nested object
                 id: 'ai_fallback',
-                name: 'AI Challenger',
-                participant_id: 'AI-FALLBACK',
+                name: getBotName(fallbackOpponentId),
+                participant_id: fallbackOpponentId,
                 skill_level: 7,
                 personality: 'competitive',
                 responsePattern: 'medium'
