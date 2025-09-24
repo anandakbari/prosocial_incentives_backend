@@ -88,7 +88,7 @@ CORS_ORIGINS=https://your-frontend.vercel.app,https://localhost:3000
 
 ```bash
 # Matchmaking Configuration
-HUMAN_SEARCH_TIMEOUT_MS=45000
+HUMAN_SEARCH_TIMEOUT_MS=180000
 AI_FALLBACK_ENABLED=true
 MAX_QUEUE_SIZE=1000
 SKILL_MATCHING_THRESHOLD=1.5

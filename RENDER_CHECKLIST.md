@@ -60,7 +60,7 @@ In Render dashboard → Your service → Environment:
 - [ ] `SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key`
 
 ### Optional (with defaults)
-- [ ] `HUMAN_SEARCH_TIMEOUT_MS=45000`
+- [ ] `HUMAN_SEARCH_TIMEOUT_MS=180000`
 - [ ] `AI_FALLBACK_ENABLED=true`
 - [ ] `LOG_LEVEL=info`
 

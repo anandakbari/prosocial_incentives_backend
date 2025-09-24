@@ -28,7 +28,7 @@ services:
       - PORT=3001
       - REDIS_URL=redis://redis:6379
       - CORS_ORIGINS=http://localhost:3000,http://localhost:5173
-      - HUMAN_SEARCH_TIMEOUT_MS=45000
+      - HUMAN_SEARCH_TIMEOUT_MS=180000
       - AI_FALLBACK_ENABLED=true
       - MAX_QUEUE_SIZE=1000
       - SKILL_MATCHING_THRESHOLD=1.5

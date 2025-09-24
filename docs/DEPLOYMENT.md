@@ -68,7 +68,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 CORS_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
 
 # Performance Tuning
-HUMAN_SEARCH_TIMEOUT_MS=45000
+HUMAN_SEARCH_TIMEOUT_MS=180000
 MAX_QUEUE_SIZE=10000
 SKILL_MATCHING_THRESHOLD=1.5
 ```
