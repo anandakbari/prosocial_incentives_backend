@@ -3,7 +3,7 @@ import RedisService from './RedisService.js';
 import AIOpponentService from './AIOpponentService.js';
 import { config } from '../config/index.js';
 import DatabaseService from './DatabaseService.js';
-import { getBotName } from '../utils/nameUtils.js';
+import { getBotName, getPlayerDisplayName } from '../utils/nameUtils.js';
 
 class MatchmakingEngine {
   constructor() {
@@ -210,7 +210,7 @@ async joinQueue(participantData) {
     // ✅ Safe to enqueue
     const queueEntry = {
       participantId,
-      participantName: participantName || `Player ${participantId.slice(-4)}`,
+      participantName: participantName || getPlayerDisplayName({ id: participantId }),
       roundNumber,
       skillLevel: skillLevel || 7,
       treatmentGroup: treatmentGroup || 'control',
@@ -379,11 +379,11 @@ async joinQueue(participantData) {
       if (!participant2Name) {
         try {
           const participant2Info = await DatabaseService.getParticipant(participant2Data.participantId);
-          participant2Name = participant2Info?.name || `Player ${participant2Data.participantId.slice(-4)}`;
+          participant2Name = getPlayerDisplayName(participant2Info || { id: participant2Data.participantId });
           console.log(`📝 Retrieved participant name from DB: ${participant2Name}`);
         } catch (dbError) {
           console.warn('⚠️ Failed to get participant name from DB, using fallback');
-          participant2Name = `Player ${participant2Data.participantId.slice(-4)}`;
+          participant2Name = getPlayerDisplayName({ id: participant2Data.participantId });
         }
       }
 
