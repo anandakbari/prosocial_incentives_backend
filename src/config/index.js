@@ -25,7 +25,7 @@ export const config = {
   },
   
   matchmaking: {
-    humanSearchTimeoutMs: parseInt(process.env.HUMAN_SEARCH_TIMEOUT_MS) || 45000,
+    humanSearchTimeoutMs: parseInt(process.env.HUMAN_SEARCH_TIMEOUT_MS) || 180000,
     aiFallbackEnabled: process.env.AI_FALLBACK_ENABLED !== 'false',
     maxQueueSize: parseInt(process.env.MAX_QUEUE_SIZE) || 1000,
     skillMatchingThreshold: parseFloat(process.env.SKILL_MATCHING_THRESHOLD) || 1.5,
