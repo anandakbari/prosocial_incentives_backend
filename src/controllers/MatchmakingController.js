@@ -10,7 +10,7 @@ class MatchmakingController {
    */
   async startMatchmaking(req, res) {
     try {
-      const { participantId, roundNumber, skillLevel, treatmentGroup } = req.body;
+      const { participantId, roundNumber, skillLevel, treatmentGroup, participantName } = req.body;
 
       // Validate required fields
       if (!participantId || !roundNumber) {
@@ -24,6 +24,7 @@ class MatchmakingController {
 
       const result = await MatchmakingEngine.startMatchmaking({
         participantId,
+        participantName,
         roundNumber,
         skillLevel: skillLevel || 7,
         treatmentGroup: treatmentGroup || 'control'
@@ -350,7 +351,7 @@ class MatchmakingController {
    */
   async createAIMatch(req, res) {
     try {
-      const { participantId, roundNumber, skillLevel } = req.body;
+      const { participantId, roundNumber, skillLevel, participantName } = req.body;
 
       if (!participantId || !roundNumber) {
         return res.status(400).json({
@@ -363,6 +364,7 @@ class MatchmakingController {
 
       const aiMatch = await MatchmakingEngine.createAIMatch({
         participantId,
+        participantName,
         roundNumber,
         skillLevel: skillLevel || 7
       });

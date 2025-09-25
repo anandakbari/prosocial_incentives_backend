@@ -158,7 +158,7 @@ class WebSocketService {
    */
   async handleStartMatchmaking(socket, data) {
     try {
-      const { participantId, roundNumber, skillLevel, treatmentGroup } = data;
+      const { participantId, roundNumber, skillLevel, treatmentGroup, participantName } = data;
       
       if (!participantId || !roundNumber) {
         socket.emit('error', { message: 'Participant ID and round number required' });
@@ -175,14 +175,14 @@ class WebSocketService {
         status: 'searching'
       });
 
-      // Get participant name from connected clients
+      // Get participant name from connected clients or use provided name
       const clientInfo = this.connectedClients.get(participantId);
-      const participantName = clientInfo?.name;
+      const finalParticipantName = participantName || clientInfo?.name;
 
       // Start matchmaking process
       const result = await MatchmakingEngine.startMatchmaking({
         participantId,
-        participantName,
+        participantName: finalParticipantName,
         roundNumber,
         skillLevel: skillLevel || 7,
         treatmentGroup: treatmentGroup || 'control'
@@ -417,20 +417,61 @@ class WebSocketService {
       console.log(`🎉 Notifying match found: ${participant1_id} vs ${participant2_id || 'AI'}`);
       console.log(`🔍 Match isAI value: ${isAI} (type: ${typeof isAI})`);
 
-      // Notify first participant
-      this.sendToParticipant(participant1_id, 'match_found', {
-        ...processedMatchData,
-        myRole: 'participant1',
-        timestamp: Date.now()
-      });
-
-      // Notify second participant if human vs human
-      if (!isAI && participant2_id) {
-        this.sendToParticipant(participant2_id, 'match_found', {
+      if (isAI) {
+        // For AI matches, send same data to participant1 (only they exist)
+        this.sendToParticipant(participant1_id, 'match_found', {
           ...processedMatchData,
-          myRole: 'participant2',
+          myRole: 'participant1',
           timestamp: Date.now()
         });
+      } else {
+        // For human vs human matches, we need to create different opponent data for each participant
+        
+        // Get participant names from match data (preferred) or connected clients (fallback)
+        const participant1Name = processedMatchData.participant1_name || 
+                                this.connectedClients.get(participant1_id)?.name || 
+                                `Player ${participant1_id.slice(-4)}`;
+        const participant2Name = processedMatchData.participant2_name || 
+                                this.connectedClients.get(participant2_id)?.name || 
+                                `Player ${participant2_id.slice(-4)}`;
+
+        // Parse the current opponent data (which is participant2's info)
+        let originalOpponent = {};
+        try {
+          originalOpponent = typeof processedMatchData.opponent === 'string' 
+            ? JSON.parse(processedMatchData.opponent) 
+            : processedMatchData.opponent;
+        } catch (e) {
+          console.warn('Failed to parse opponent data, using fallback');
+        }
+
+        // Create participant1's match data (opponent is participant2)
+        const participant1MatchData = {
+          ...processedMatchData,
+          opponent: JSON.stringify({
+            name: participant2Name,
+            participant_id: participant2_id,
+            skill_level: originalOpponent.skill_level
+          }),
+          myRole: 'participant1',
+          timestamp: Date.now()
+        };
+
+        // Create participant2's match data (opponent is participant1)
+        const participant2MatchData = {
+          ...processedMatchData,
+          opponent: JSON.stringify({
+            name: participant1Name,
+            participant_id: participant1_id,
+            skill_level: 7 // Default skill level, could be retrieved if needed
+          }),
+          myRole: 'participant2',
+          timestamp: Date.now()
+        };
+
+        // Send customized data to each participant
+        this.sendToParticipant(participant1_id, 'match_found', participant1MatchData);
+        this.sendToParticipant(participant2_id, 'match_found', participant2MatchData);
       }
 
     } catch (error) {

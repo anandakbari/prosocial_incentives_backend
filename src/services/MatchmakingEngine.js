@@ -401,15 +401,27 @@ async joinQueue(participantData) {
         throw new Error('Self-match attempted');
       }
 
-      // Get participant name from database if not provided
+      // Get both participant names from database if not provided
+      let participant1Name = participant1Data.participantName;
+      if (!participant1Name) {
+        try {
+          const participant1Info = await DatabaseService.getParticipant(participant1Data.participantId);
+          participant1Name = getPlayerDisplayName(participant1Info || { id: participant1Data.participantId });
+          console.log(`📝 Retrieved participant1 name from DB: ${participant1Name}`);
+        } catch (dbError) {
+          console.warn('⚠️ Failed to get participant1 name from DB, using fallback');
+          participant1Name = getPlayerDisplayName({ id: participant1Data.participantId });
+        }
+      }
+
       let participant2Name = participant2Data.participantName;
       if (!participant2Name) {
         try {
           const participant2Info = await DatabaseService.getParticipant(participant2Data.participantId);
           participant2Name = getPlayerDisplayName(participant2Info || { id: participant2Data.participantId });
-          console.log(`📝 Retrieved participant name from DB: ${participant2Name}`);
+          console.log(`📝 Retrieved participant2 name from DB: ${participant2Name}`);
         } catch (dbError) {
-          console.warn('⚠️ Failed to get participant name from DB, using fallback');
+          console.warn('⚠️ Failed to get participant2 name from DB, using fallback');
           participant2Name = getPlayerDisplayName({ id: participant2Data.participantId });
         }
       }
@@ -423,7 +435,11 @@ async joinQueue(participantData) {
         status: 'active',
         created_at: new Date().toISOString(),
         isAI: false,
-        opponent: JSON.stringify({ // Stringify the nested object
+        // Store both participant names for WebSocket service to use
+        participant1_name: participant1Name,
+        participant2_name: participant2Name,
+        // Legacy opponent field for backward compatibility (contains participant2's info)
+        opponent: JSON.stringify({ 
           name: participant2Name,
           participant_id: participant2Data.participantId,
           skill_level: participant2Data.skillLevel
